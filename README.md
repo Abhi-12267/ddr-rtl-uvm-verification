@@ -63,13 +63,6 @@ DDR_VAL/
     interactive_waves.tcl
     INTERACTIVE_GUIDE.txt
     VERDI_LIVE_GUIDE.txt
-  protocol_rc/
-    00_index.rc
-    01_smoke_test.rc
-    02_timing_test.rc
-    03_refresh_test.rc
-    04_random_test.rc
-    05_stress_test.rc
   filelist.f
   waves.tcl
   Makefile
