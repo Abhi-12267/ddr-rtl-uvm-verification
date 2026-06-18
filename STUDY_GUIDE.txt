@@ -1,0 +1,91 @@
+DDR UVM STUDY GUIDE (NO COCOTB)
+================================
+
+This project is a learning-oriented DDR command scheduler/controller model with
+full SystemVerilog UVM validation.
+
+1) WHAT IS MODELED
+------------------
+- Command interface:
+  CMD_NOP, CMD_ACT, CMD_READ, CMD_WRITE, CMD_PRE, CMD_REF
+- Basic timing rules:
+  tRCD (ACT->RD/WR), tRAS (ACT->PRE), tRP (PRE->ACT), tCCD (RD/WR spacing)
+- State rules:
+  - READ/WRITE require active row in target bank
+  - PRE requires bank open
+  - REF requires all banks precharged
+- Data path:
+  WRITE stores data into model memory
+  READ returns data from model memory
+
+2) DUT FILE
+-----------
+- rtl/ddr_ctrl_model.sv
+
+3) UVM ARCHITECTURE
+-------------------
+- ddr_cmd_item: request transaction
+- ddr_rsp_item: response transaction
+- ddr_driver: drives command channel
+- ddr_cmd_monitor: observes accepted commands
+- ddr_rsp_monitor: observes responses
+- ddr_predictor: reference model (mirrors timing/state/data behavior)
+- ddr_scoreboard: compares predicted vs actual
+- ddr_cov: command/status/bank coverage and crosses
+- ddr_env: connects all components
+
+4) TESTS INCLUDED
+-----------------
+- smoke_test: directed legal flow (ACT, WR, RD, PRE, REF)
+- timing_test: intentional timing violations
+- refresh_test: illegal refresh then legal refresh flow
+- random_test: legal randomized traffic
+- stress_test: mixed legal/illegal traffic
+
+5) HOW TO RUN
+-------------
+- make smoke
+- make timing
+- make refresh
+- make random
+- make stress
+
+Or run directly:
+- scripts/run_uvm.sh smoke_test
+- scripts/run_uvm.sh timing_test
+- scripts/run_uvm.sh refresh_test
+- scripts/run_uvm.sh random_test
+- scripts/run_uvm.sh stress_test
+
+6) VERDI
+--------
+After run and FSDB conversion:
+verdi -sv -uvm -f filelist.f -top tb_top -ssf ddr_waves.fsdb &
+
+7) SIGNALS TO DEBUG FIRST
+-------------------------
+Top handshake:
+- cmd_valid, cmd_ready, cmd, cmd_id
+- bank, row, col, wdata
+- rsp_valid, rsp_ready, rsp_status, rsp_id, rsp_rdata
+
+DUT internal (from ddr_ctrl_model):
+- open_valid[0:3], open_row[0:3]
+- last_act_cycle[], last_pre_cycle[], last_rw_cycle
+- refresh_busy_until
+- pipe_valid/pipe_status/pipe_id/pipe_rdata
+
+8) SUGGESTED LEARNING FLOW
+--------------------------
+A) Run smoke_test and understand one golden path.
+B) Run timing_test and observe expected ST_ERR_TIMING responses.
+C) Run refresh_test and inspect refresh-state constraints.
+D) Run random_test and inspect scoreboard pass consistency.
+E) Run stress_test and check coverage trends.
+
+9) STATUS CODES
+---------------
+- 0: ST_OK
+- 1: ST_ERR_TIMING
+- 2: ST_ERR_STATE
+- 3: ST_ERR_CMD
